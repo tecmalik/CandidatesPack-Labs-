@@ -3,6 +3,7 @@ package com.example.candidatepark.services;
 import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.SignUpResponse;
 import com.example.candidatepark.dtos.UserDTO;
+import com.example.candidatepark.dtos.VerificationDTO;
 import com.example.candidatepark.exceptions.DuplicateUserException;
 import com.example.candidatepark.exceptions.InvalidDetailsException;
 import org.junit.jupiter.api.AfterEach;
@@ -50,10 +51,11 @@ public class UserServicesTest {
         assertThrows(DuplicateUserException.class,()-> userServices.signUp(testUserDuplicate));
         userRepository.delete(userRepository.findByEmail(testUser.getEmail()));
     }
-    @Test
-    public void duplicateSignUpRaiseExceptionTest2(){
-
-    }
+//    @Test
+//    public void userEmailCanBeVerifiedTest(){
+//        VerificationDTO verificationDTO = userServices.verifyEmail(testUser);
+//
+//    }
 
 
 }

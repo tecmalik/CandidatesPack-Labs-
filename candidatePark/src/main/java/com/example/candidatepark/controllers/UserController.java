@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 ;
 
 @RestController()
-@RequestMapping("/api/users")
+@RequestMapping("/V1/auth")
 public class UserController {
 
     @Autowired
     private UserServices userServices;
 
-    @PostMapping
+    @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody @Valid UserDTO userDTO){
         try {
             SignUpResponse signUpResponse = userServices.signUp(userDTO);
@@ -32,6 +32,7 @@ public class UserController {
             return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
 
     
 
