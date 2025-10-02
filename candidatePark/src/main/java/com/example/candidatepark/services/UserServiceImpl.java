@@ -4,7 +4,7 @@ import com.example.candidatepark.data.models.User;
 import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.SignUpResponse;
 import com.example.candidatepark.dtos.UserDTO;
-import com.example.candidatepark.exceptions.DuplicateUserException;
+import com.example.candidatepark.exceptions.DuplicateSignUpException;
 import com.example.candidatepark.exceptions.InvalidDetailsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class UserServiceImpl implements UserServices{
     }
 
     private void validateExistence(UserDTO testUser) {
-        if(userRepository.findByEmail(testUser.getEmail())!=null) throw new DuplicateUserException("User already exists");
+        if(userRepository.findByEmail(testUser.getEmail())!=null) throw new DuplicateSignUpException("EMAIL_IN_USE");
     }
 
     private void validateDetails(UserDTO testUser) {

@@ -3,10 +3,8 @@ package com.example.candidatepark.services;
 import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.SignUpResponse;
 import com.example.candidatepark.dtos.UserDTO;
-import com.example.candidatepark.dtos.VerificationDTO;
-import com.example.candidatepark.exceptions.DuplicateUserException;
+import com.example.candidatepark.exceptions.DuplicateSignUpException;
 import com.example.candidatepark.exceptions.InvalidDetailsException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +46,7 @@ public class UserServicesTest {
         SignUpResponse signUpResponse = userServices.signUp(testUser);
         assertThat(signUpResponse).isNotNull();
         UserDTO testUserDuplicate = testUser;
-        assertThrows(DuplicateUserException.class,()-> userServices.signUp(testUserDuplicate));
+        assertThrows(DuplicateSignUpException.class,()-> userServices.signUp(testUserDuplicate));
         userRepository.delete(userRepository.findByEmail(testUser.getEmail()));
     }
 //    @Test
