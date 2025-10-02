@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class SignUpResponse {
-    String token;
+    private Long token;
 }

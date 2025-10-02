@@ -7,12 +7,13 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name ="USER")
+@Table(name ="USERS")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
+    private Long id;
     @Email
+    @Column(unique = true, nullable = false)
     private String email;
     @NotBlank
     private String password;
