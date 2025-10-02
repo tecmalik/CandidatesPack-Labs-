@@ -5,23 +5,28 @@ import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.SignUpResponse;
 import com.example.candidatepark.dtos.UserDTO;
 import com.example.candidatepark.services.UserServices;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.*;
 
 ;
 
-@RestController()
+@RestController
 @RequestMapping("/V1/auth")
 public class UserController {
 
     @Autowired
     private UserServices userServices;
+
+    @GetMapping("/")
+    public String welcomeController(){
+        return "HOMEPAGE FOR TALENT";
+    }
+
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody @Valid UserDTO userDTO){
@@ -34,6 +39,6 @@ public class UserController {
     }
 
 
-    
+
 
 }
