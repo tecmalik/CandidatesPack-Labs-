@@ -1,16 +1,13 @@
 package com.example.candidatepark.controllers;
 
 
-import com.example.candidatepark.data.repository.UserRepository;
-import com.example.candidatepark.dtos.SignUpResponse;
-import com.example.candidatepark.dtos.UserDTO;
+import com.example.candidatepark.dtos.response.SignUpResponse;
+import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.services.UserServices;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 ;
@@ -26,7 +23,6 @@ public class UserController {
     public String welcomeController(){
         return "HOMEPAGE FOR TALENT";
     }
-
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody @Valid UserDTO userDTO){

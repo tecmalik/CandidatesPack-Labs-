@@ -1,8 +1,9 @@
 package com.example.candidatepark.services;
 
 import com.example.candidatepark.data.repository.UserRepository;
-import com.example.candidatepark.dtos.SignUpResponse;
-import com.example.candidatepark.dtos.UserDTO;
+import com.example.candidatepark.dtos.request.LoginResponse;
+import com.example.candidatepark.dtos.response.SignUpResponse;
+import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.exceptions.DuplicateSignUpException;
 import com.example.candidatepark.exceptions.InvalidDetailsException;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,40 +21,45 @@ public class UserServicesTest {
     private UserServices userServices;
     @Autowired
     private UserRepository userRepository;
-    UserDTO testUser;
+    UserDTO testUserDTO;
     @BeforeEach
     public void setUp() {
-        testUser = new UserDTO();
-        testUser.setEmail("testMail2@gmail.com");
-        testUser.setPassword("testPassword");
+        testUserDTO = new UserDTO();
+        testUserDTO.setEmail("testMail2@gmail.com");
+        testUserDTO.setPassword("testPassword");
     }
 
 
     @Test
     public void userCanSignUpTest(){
-        SignUpResponse signUpResponse = userServices.signUp(testUser);
+        SignUpResponse signUpResponse = userServices.signUp(testUserDTO);
         assertThat(signUpResponse).isNotNull();
-        userRepository.delete(userRepository.findByEmail(testUser.getEmail()));
+        userRepository.delete(userRepository.findByEmail(testUserDTO.getEmail()));
     }
     @Test
     public void userCanNotSignInWithInvalidDetailsTest(){
-        testUser.setEmail(" ");
-        testUser.setPassword("");
-        assertThrows( InvalidDetailsException.class, ()-> userServices.signUp(testUser));
+        testUserDTO.setEmail(" ");
+        testUserDTO.setPassword("");
+        assertThrows( InvalidDetailsException.class, ()-> userServices.signUp(testUserDTO));
     }
     @Test
     public void duplicateSignUpRaiseExceptionTest(){
-        SignUpResponse signUpResponse = userServices.signUp(testUser);
+        SignUpResponse signUpResponse = userServices.signUp(testUserDTO);
         assertThat(signUpResponse).isNotNull();
-        UserDTO testUserDuplicate = testUser;
+        UserDTO testUserDuplicate = testUserDTO;
         assertThrows(DuplicateSignUpException.class,()-> userServices.signUp(testUserDuplicate));
-        userRepository.delete(userRepository.findByEmail(testUser.getEmail()));
+        userRepository.delete(userRepository.findByEmail(testUserDTO.getEmail()));
     }
-//    @Test
-//    public void userEmailCanBeVerifiedTest(){
-//        VerificationDTO verificationDTO = userServices.verifyEmail(testUser);
-//
-//    }
+    @Test
+    public void userEmailCanBeVerifiedTest(){
+//        VerificationRequestDTO verificationDTO = userServices.verifyEmail(testUser);
+
+    }
+    @Test
+    public void userCanLoginTest(){
+        LoginResponse loginResponse = userServices.signUp(testUserDTO);
+
+    }
 
 
 }

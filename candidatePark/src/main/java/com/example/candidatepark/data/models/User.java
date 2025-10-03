@@ -17,5 +17,8 @@ public class User {
     private String email;
     @NotBlank
     private String password;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "email_verification_status")
+    private EmailVerificationStatus verificationStatus = EmailVerificationStatus.PENDING;
 
 }

@@ -18,9 +18,10 @@ public class UserDetailServices implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(username);
         if (user == null) {
-            throw new UsernameNotFoundException("INVALID_CREDENTIALS");
+            throw new UsernameNotFoundException("INVALID CREDENTIALS");
         }
 
         return new UserPrinciple(user) ;
     }
+
 }
