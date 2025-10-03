@@ -1,6 +1,7 @@
 package com.example.candidatepark.controllers;
 
 
+import com.example.candidatepark.dtos.request.LoginResponse;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.services.UserServices;
@@ -34,7 +35,15 @@ public class UserController {
         }
     }
 
-
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody @Valid UserDTO userDTO){
+        try {
+            LoginResponse loginResponse = userServices.login(userDTO);
+            return new ResponseEntity<>(loginResponse , HttpStatus.OK);
+        }catch (Exception exception){
+            return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
 
 
 }

@@ -57,7 +57,8 @@ public class UserServicesTest {
     }
     @Test
     public void userCanLoginTest(){
-        LoginResponse loginResponse = userServices.signUp(testUserDTO);
+        LoginResponse loginResponse = userServices.login(testUserDTO);
+        assertThat(loginResponse).isNotNull();
 
     }
 
