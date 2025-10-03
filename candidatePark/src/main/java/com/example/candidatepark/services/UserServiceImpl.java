@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserServices{
 
         LoginResponse loginResponse = new LoginResponse();
 
-        loginResponse.setToken(jwtService.generateToken());
+        loginResponse.setToken(jwtService.generateToken(testUser.getEmail()));
         return loginResponse;
     }
 
