@@ -1,5 +1,6 @@
 package com.example.candidatepark.services;
 
+import com.example.candidatepark.data.models.EmailVerificationStatus;
 import com.example.candidatepark.data.models.User;
 import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.request.LoginResponse;
@@ -57,7 +58,20 @@ public class UserServiceImpl implements UserServices{
     }
 
     private void validateExistence(UserDTO testUser) {
-        if(userRepository.findByEmail(testUser.getEmail())!=null) throw new DuplicateSignUpException("EMAIL IN USE");
+
+        if(userRepository.findByEmail(testUser.getEmail())!=null && userRepository
+                .findByEmail(testUser.getEmail())
+                .getVerificationStatus() == EmailVerificationStatus.PENDING){
+            verifyEmail(testUser.getEmail());
+        }
+        if(userRepository.findByEmail(testUser.getEmail())!=null && userRepository
+                .findByEmail(testUser.getEmail())
+                .getVerificationStatus() == EmailVerificationStatus.VERIFIED) throw new DuplicateSignUpException("EMAIL IN USE");
+    }
+
+    private void verifyEmail(String email) {
+//        String token = generatedToken();
+
     }
 
     private void validateDetails(UserDTO testUser) {

@@ -57,8 +57,13 @@ public class UserServicesTest {
     }
     @Test
     public void userCanLoginTest(){
+        SignUpResponse signUpResponse = userServices.signUp(testUserDTO);
+        assertThat(signUpResponse).isNotNull();
+
         LoginResponse loginResponse = userServices.login(testUserDTO);
         assertThat(loginResponse).isNotNull();
+
+        userRepository.delete(userRepository.findByEmail(testUserDTO.getEmail()));
 
     }
 

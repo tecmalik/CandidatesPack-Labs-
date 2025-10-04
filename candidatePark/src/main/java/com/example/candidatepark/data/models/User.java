@@ -20,5 +20,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "email_verification_status")
     private EmailVerificationStatus verificationStatus = EmailVerificationStatus.PENDING;
+    @Column(name = "reset_token")
+    private String resetToken;
 
 }
