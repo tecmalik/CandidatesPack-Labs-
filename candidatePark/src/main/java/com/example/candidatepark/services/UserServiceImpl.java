@@ -46,6 +46,7 @@ public class UserServiceImpl implements UserServices{
         user.setEmail(testUser.getEmail());
         user.setPassword(bCryptPasswordEncoder.encode(testUser.getPassword()));
         User savedUser = userRepository.save(user);
+        System.out.print("Got to this point");
         SignUpResponse signUpResponse = new SignUpResponse();
         signUpResponse.setMessage("Signup successful. Please verify your email.");
         signUpResponse.setToken(jwtService.generateToken(testUser.getEmail()));
