@@ -40,14 +40,17 @@ public class UserServiceImpl implements UserServices{
 
     @Override
     public SignUpResponse signUp(UserDTO testUser) {
-        User user = new User();
         validateDetails(testUser);
         validateExistence(testUser);
+        User user = new User();
         user.setEmail(testUser.getEmail());
         user.setPassword(bCryptPasswordEncoder.encode(testUser.getPassword()));
         User savedUser = userRepository.save(user);
         SignUpResponse signUpResponse = new SignUpResponse();
-        signUpResponse.setToken(savedUser.getId());
+        signUpResponse.setMessage("Signup successful. Please verify your email.");
+        signUpResponse.setToken(jwtService.generateToken(testUser.getEmail()));
+        signUpResponse.setUser(savedUser);
+        signUpResponse.setEmailVerificationStatus(VerificationStatus.PENDING);
     return signUpResponse;
     }
 
@@ -88,8 +91,7 @@ public class UserServiceImpl implements UserServices{
 
     private void validateExistence(UserDTO testUser) {
         User foundUser = userRepository.findByEmail(testUser.getEmail());
-        if(foundUser!=null && !foundUser.isEmailVerified()) sendEmailVerification(foundUser);
-        if(foundUser!=null && foundUser.isEmailVerified()) throw new DuplicateSignUpException("EMAIL IN USE");
+        if(foundUser != null ) throw new DuplicateSignUpException("EMAIL IN USE");
     }
 
     private void sendEmailVerification(User foundUser) {

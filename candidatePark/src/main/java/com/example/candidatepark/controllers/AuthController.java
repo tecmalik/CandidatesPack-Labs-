@@ -22,7 +22,7 @@ public class AuthController {
     @Autowired
     private UserServices userServices;
 
-    @GetMapping("/")
+    @GetMapping("/home")
     public String welcomeController(){
         return "HOMEPAGE FOR TALENT";
     }
