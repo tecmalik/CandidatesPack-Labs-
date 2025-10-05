@@ -6,6 +6,7 @@ import com.example.candidatepark.data.repository.TokenRepository;
 import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.dtos.response.SignUpResponse;
+import com.example.candidatepark.exceptions.DuplicateSignUpException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -65,10 +67,32 @@ public class UserServiceMockTest {
 
     }
     @Test
-    void signupWithExistingEmailThrowsEmailInUseErrorTest(){
-
-
+    void signupWithExistingEmailThrowsEmailInUseErrorForVarifiedMailTest(){
+        User existingUser = new User();
+        existingUser.setEmailVerified(true);
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        assertThrows(DuplicateSignUpException.class, () -> userServices.signUp(testUserDTO));
     }
+    @Test
+    void signupWithExistingUnVerifiedEmailSendVerify(){
+
+        User savedUser = new User();
+        savedUser.setEmail(testUserDTO.getEmail());
+        User existingUser = new User();
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(jwtService.generateToken(testUserDTO.getEmail())).thenReturn("mockJwtToken");
+
+        SignUpResponse signUpResponse = userServices.signUp(testUserDTO);
+        assertEquals("VERIFICATION RESENT",signUpResponse.getMessage());
+        assertThat(signUpResponse.getToken()).isNotNull();
+        assertEquals(VerificationStatus.PENDING, signUpResponse.getEmailVerificationStatus());
+        
+    }
+    @Test
+    void verifyEmailVerificationTest(){
+        
+    }
+
 
 }
 

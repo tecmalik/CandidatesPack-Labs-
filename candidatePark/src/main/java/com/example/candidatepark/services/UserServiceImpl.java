@@ -41,12 +41,17 @@ public class UserServiceImpl implements UserServices{
     @Override
     public SignUpResponse signUp(UserDTO testUser) {
         validateDetails(testUser);
-        validateExistence(testUser);
+        if (userExist(testUser)){
+            SignUpResponse signUpResponse = new SignUpResponse();
+            signUpResponse.setMessage("VERIFICATION RESENT");
+            signUpResponse.setToken(jwtService.generateToken(testUser.getEmail()));
+            signUpResponse.setEmailVerificationStatus(VerificationStatus.PENDING);
+            return signUpResponse;
+        }
         User user = new User();
         user.setEmail(testUser.getEmail());
         user.setPassword(bCryptPasswordEncoder.encode(testUser.getPassword()));
         User savedUser = userRepository.save(user);
-        System.out.print("Got to this point");
         SignUpResponse signUpResponse = new SignUpResponse();
         signUpResponse.setMessage("Signup successful. Please verify your email.");
         signUpResponse.setToken(jwtService.generateToken(testUser.getEmail()));
@@ -90,9 +95,10 @@ public class UserServiceImpl implements UserServices{
         if (!authentication.isAuthenticated()) throw new InvalidDetailsException("INVALID CREDENTIALS");
     }
 
-    private void validateExistence(UserDTO testUser) {
+    private boolean userExist(UserDTO testUser) {
         User foundUser = userRepository.findByEmail(testUser.getEmail());
-        if(foundUser != null ) throw new DuplicateSignUpException("EMAIL IN USE");
+        if(foundUser != null && foundUser.isEmailVerified()) throw new DuplicateSignUpException("EMAIL IN USE");
+        return foundUser != null;
     }
 
     private void sendEmailVerification(User foundUser) {
