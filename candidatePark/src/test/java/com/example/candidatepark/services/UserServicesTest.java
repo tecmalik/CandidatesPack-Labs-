@@ -1,7 +1,7 @@
 package com.example.candidatepark.services;
 
 import com.example.candidatepark.data.repository.UserRepository;
-import com.example.candidatepark.dtos.request.LoginResponse;
+import com.example.candidatepark.dtos.response.LoginResponse;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.exceptions.DuplicateSignUpException;
@@ -53,7 +53,8 @@ public class UserServicesTest {
     @Test
     public void userEmailCanBeVerifiedTest(){
 //        VerificationRequestDTO verificationDTO = userServices.verifyEmail(testUser);
-
+//        VerificationResponseDTO verificationResponseDTO = new VerificationResponseDTO();
+//        verificationResponseDTO.setStat
     }
     @Test
     public void userCanLoginTest(){

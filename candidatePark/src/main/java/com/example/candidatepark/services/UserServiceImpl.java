@@ -1,19 +1,27 @@
 package com.example.candidatepark.services;
 
-import com.example.candidatepark.data.models.EmailVerificationStatus;
 import com.example.candidatepark.data.models.User;
+import com.example.candidatepark.data.models.VerificationStatus;
+import com.example.candidatepark.data.models.VerificationToken;
+import com.example.candidatepark.data.repository.TokenRepository;
 import com.example.candidatepark.data.repository.UserRepository;
-import com.example.candidatepark.dtos.request.LoginResponse;
+import com.example.candidatepark.dtos.response.LoginResponse;
+import com.example.candidatepark.dtos.request.TokenDTO;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.request.UserDTO;
+import com.example.candidatepark.dtos.response.VerificationResponseDTO;
 import com.example.candidatepark.exceptions.DuplicateSignUpException;
 import com.example.candidatepark.exceptions.InvalidDetailsException;
+import com.example.candidatepark.exceptions.InvalidTokenException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements UserServices{
@@ -23,7 +31,11 @@ public class UserServiceImpl implements UserServices{
     AuthenticationManager authenticationManager;
     @Autowired
     private JWTService jwtService;
+    @Autowired
+    private EmailService emailService;
     BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
+    @Autowired
+    private TokenRepository tokenRepository;
 
 
     @Override
@@ -39,6 +51,7 @@ public class UserServiceImpl implements UserServices{
     return signUpResponse;
     }
 
+
     @Override
     public LoginResponse login(UserDTO testUser) {
         validateDetails(testUser);
@@ -50,6 +63,22 @@ public class UserServiceImpl implements UserServices{
         return loginResponse;
     }
 
+    @Override
+    public VerificationResponseDTO verifyEmail(TokenDTO tokenDTO) {
+        Optional<VerificationToken> tokenOpt = tokenRepository.findByToken(tokenDTO.getToken());
+
+        if (tokenOpt.isEmpty() || tokenOpt.get().isExpired())throw new InvalidTokenException("TOKEN_INVALID.");
+        User user = tokenOpt.get().getUser();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        tokenRepository.delete(tokenOpt.get());
+        return VerificationResponseDTO
+                .builder()
+                .status(VerificationStatus.VERIFIED)
+                .build();
+    }
+
 
     private void verifyUser(UserDTO testUser) {
         Authentication authentication = authenticationManager
@@ -58,20 +87,23 @@ public class UserServiceImpl implements UserServices{
     }
 
     private void validateExistence(UserDTO testUser) {
-
-        if(userRepository.findByEmail(testUser.getEmail())!=null && userRepository
-                .findByEmail(testUser.getEmail())
-                .getVerificationStatus() == EmailVerificationStatus.PENDING){
-            verifyEmail(testUser.getEmail());
-        }
-        if(userRepository.findByEmail(testUser.getEmail())!=null && userRepository
-                .findByEmail(testUser.getEmail())
-                .getVerificationStatus() == EmailVerificationStatus.VERIFIED) throw new DuplicateSignUpException("EMAIL IN USE");
+        User foundUser = userRepository.findByEmail(testUser.getEmail());
+        if(foundUser!=null && !foundUser.isEmailVerified()) sendEmailVerification(foundUser);
+        if(foundUser!=null && foundUser.isEmailVerified()) throw new DuplicateSignUpException("EMAIL IN USE");
     }
 
-    private void verifyEmail(String email) {
-//        String token = generatedToken();
+    private void sendEmailVerification(User foundUser) {
+        String token = generatedToken(foundUser);
+        emailService.sendVerificationEmail(token, foundUser.getEmail());
+    }
 
+    private String generatedToken(User foundUser) {
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(foundUser);
+        tokenRepository.save(verificationToken);
+        return token;
     }
 
     private void validateDetails(UserDTO testUser) {

@@ -1,4 +1,4 @@
-package com.example.candidatepark.dtos.request;
+package com.example.candidatepark.dtos.response;
 
 import lombok.Data;
 
