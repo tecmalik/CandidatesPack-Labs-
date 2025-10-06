@@ -76,8 +76,9 @@ public class UserServiceImpl implements UserServices{
 
     @Override
     public VerificationResponseDTO verifyEmail(TokenDTO tokenDTO) {
+        if (tokenDTO == null)throw new InvalidTokenException("TOKEN_INVALID.");
         Optional<VerificationToken> tokenOtp = tokenRepository.findByToken(tokenDTO.getToken());
-
+        if (tokenOtp == null)throw new InvalidTokenException("TOKEN_INVALID.");
         if (tokenOtp.isEmpty() || tokenOtp.get().isExpired())throw new InvalidTokenException("TOKEN_INVALID.");
         if(tokenOtp.get().isUsed())throw new InvalidTokenException("TOKEN_ALREADY_USED.");
         User user = tokenOtp.get().getUser();

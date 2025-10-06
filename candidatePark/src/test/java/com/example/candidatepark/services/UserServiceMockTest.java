@@ -7,6 +7,7 @@ import com.example.candidatepark.data.repository.TokenRepository;
 import com.example.candidatepark.data.repository.UserRepository;
 import com.example.candidatepark.dtos.request.TokenDTO;
 import com.example.candidatepark.dtos.request.UserDTO;
+import com.example.candidatepark.dtos.response.LoginResponse;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.response.VerificationResponseDTO;
 import com.example.candidatepark.exceptions.DuplicateSignUpException;
@@ -17,11 +18,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -44,6 +46,8 @@ public class UserServiceMockTest {
     private JWTService jwtService;
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
+    @Mock
+    private AuthenticationManager authenticationManager;
     @InjectMocks
     private UserServiceImpl userServices;
 
@@ -99,12 +103,13 @@ public class UserServiceMockTest {
     @Test
     void userEmailCanBeVerifiedWithValidTokenTest(){
         TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setToken("mockJwtToken");
         VerificationToken token = new VerificationToken();
         User user = new User();
         user.setEmail(testUserDTO.getEmail());
         user.setPassword("encodedPassword");
         token.setUser(user);
-        token.setToken("mockJwtToken");
+        token.setToken(tokenDTO.getToken());
         token.setExpiryDate(LocalDateTime.now().plusHours(1));
 
 
@@ -116,14 +121,15 @@ public class UserServiceMockTest {
 
     }
     @Test
-    void userVerificationThrowsTokenExpiredExceptionWithInvalidTokenTest(){
+    void userVerificationThrowsTokenExpiredExceptionWithExpiredTokenTest(){
         TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setToken("mockJwtToken");
         VerificationToken token = new VerificationToken();
         User user = new User();
         user.setEmail(testUserDTO.getEmail());
         user.setPassword("encodedPassword");
         token.setUser(user);
-        token.setToken("mockJwtToken");
+        token.setToken(tokenDTO.getToken());
         token.setExpiryDate(LocalDateTime.now().minusHours(1));
 
         when(tokenRepository.findByToken(tokenDTO.getToken())).thenReturn(Optional.of(token));
@@ -133,20 +139,52 @@ public class UserServiceMockTest {
     @Test
     void userVerificationTrowsTokenExceptionWithUsedTokenTest (){
         TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setToken("mockJwtToken");
         VerificationToken token = new VerificationToken();
         User user = new User();
         user.setEmail(testUserDTO.getEmail());
         user.setPassword("encodedPassword");
         token.setUser(user);
         token.setUsed(true);
-        token.setToken("mockJwtToken");
+        token.setToken(tokenDTO.getToken());
         token.setExpiryDate(LocalDateTime.now().plusHours(1));
 
         when(tokenRepository.findByToken(tokenDTO.getToken())).thenReturn(Optional.of(token));
         assertThrows(InvalidTokenException.class,()-> userServices.verifyEmail(tokenDTO));
 
     }
-    
+    @Test
+    void userVerificationThrowsTokenExpiredExceptionWithInvalidTokenTest(){
+        TokenDTO invalidTokenDTO = new TokenDTO();
+        invalidTokenDTO.setToken("invalidMockJwtToken");
+
+        when(tokenRepository.findByToken(invalidTokenDTO.getToken())).thenReturn(null);
+        assertThrows(InvalidTokenException.class,()-> userServices.verifyEmail(invalidTokenDTO));
+
+    }
+    @Test
+    void userCanLoginWithVarifiedEmailTest(){
+        UserDTO loginDTO = new UserDTO();
+        loginDTO.setEmail(testUserDTO.getEmail());
+        loginDTO.setPassword("encodedPassword");
+
+
+        User existingUser = new User();
+        existingUser.setEmail(loginDTO.getEmail());
+        existingUser.setPassword(loginDTO.getPassword());
+        existingUser.setEmailVerified(true);
+
+        when(userRepository.save(existingUser)).thenReturn(existingUser);
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(jwtService.generateToken(testUserDTO.getEmail())).thenReturn("mockJwtToken");
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(null);
+        LoginResponse loginResponse = userServices.login(testUserDTO);
+
+        assertThat(loginResponse).isNotNull();
+
+    }
+
 
 
 
