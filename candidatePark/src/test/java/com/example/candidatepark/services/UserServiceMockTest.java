@@ -25,6 +25,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -168,17 +169,27 @@ public class UserServiceMockTest {
         loginDTO.setEmail(testUserDTO.getEmail());
         loginDTO.setPassword("encodedPassword");
 
-
         User existingUser = new User();
         existingUser.setEmail(loginDTO.getEmail());
         existingUser.setPassword(loginDTO.getPassword());
         existingUser.setEmailVerified(true);
 
-        when(userRepository.save(existingUser)).thenReturn(existingUser);
-        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(userRepository.findByEmail(testUserDTO.getEmail()))
+                .thenReturn(existingUser);
+        UsernamePasswordAuthenticationToken authenticatedToken =
+                new UsernamePasswordAuthenticationToken(
+                        testUserDTO.getEmail(),
+                        testUserDTO.getPassword(),
+                        Collections.emptyList()
+                );
+
         when(jwtService.generateToken(testUserDTO.getEmail())).thenReturn("mockJwtToken");
+        when(userRepository.findByEmail(loginDTO.getEmail())).thenReturn(existingUser);
         when(authenticationManager.authenticate(any(Authentication.class)))
-                .thenReturn(null);
+                .thenReturn(new UsernamePasswordAuthenticationToken(
+                        loginDTO.getEmail(),
+                        loginDTO.getPassword()
+                ));
         LoginResponse loginResponse = userServices.login(testUserDTO);
 
         assertThat(loginResponse).isNotNull();
