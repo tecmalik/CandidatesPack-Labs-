@@ -26,9 +26,11 @@ public class VerificationToken {
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
+    @Column(nullable = false, unique = true)
+    private boolean isUsed =  false;
 
     public VerificationToken() {
-        this.expiryDate = LocalDateTime.now().plusHours(24);
+        this.expiryDate = LocalDateTime.now().plusHours(1);
     }
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);

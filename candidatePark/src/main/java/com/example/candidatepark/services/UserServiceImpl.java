@@ -44,6 +44,7 @@ public class UserServiceImpl implements UserServices{
         if (userExist(testUser)){
             SignUpResponse signUpResponse = new SignUpResponse();
             signUpResponse.setMessage("VERIFICATION RESENT");
+            signUpResponse.setUser(userRepository.findByEmail(testUser.getEmail()));
             signUpResponse.setToken(jwtService.generateToken(testUser.getEmail()));
             signUpResponse.setEmailVerificationStatus(VerificationStatus.PENDING);
             return signUpResponse;
@@ -52,6 +53,7 @@ public class UserServiceImpl implements UserServices{
         user.setEmail(testUser.getEmail());
         user.setPassword(bCryptPasswordEncoder.encode(testUser.getPassword()));
         User savedUser = userRepository.save(user);
+        sendEmailVerification(savedUser);
         SignUpResponse signUpResponse = new SignUpResponse();
         signUpResponse.setMessage("Signup successful. Please verify your email.");
         signUpResponse.setToken(jwtService.generateToken(testUser.getEmail()));
@@ -74,14 +76,15 @@ public class UserServiceImpl implements UserServices{
 
     @Override
     public VerificationResponseDTO verifyEmail(TokenDTO tokenDTO) {
-        Optional<VerificationToken> tokenOpt = tokenRepository.findByToken(tokenDTO.getToken());
+        Optional<VerificationToken> tokenOtp = tokenRepository.findByToken(tokenDTO.getToken());
 
-        if (tokenOpt.isEmpty() || tokenOpt.get().isExpired())throw new InvalidTokenException("TOKEN_INVALID.");
-        User user = tokenOpt.get().getUser();
+        if (tokenOtp.isEmpty() || tokenOtp.get().isExpired())throw new InvalidTokenException("TOKEN_INVALID.");
+        if(tokenOtp.get().isUsed())throw new InvalidTokenException("TOKEN_ALREADY_USED.");
+        User user = tokenOtp.get().getUser();
         user.setEmailVerified(true);
         userRepository.save(user);
 
-        tokenRepository.delete(tokenOpt.get());
+        tokenRepository.delete(tokenOtp.get());
         return VerificationResponseDTO
                 .builder()
                 .status(VerificationStatus.VERIFIED)
