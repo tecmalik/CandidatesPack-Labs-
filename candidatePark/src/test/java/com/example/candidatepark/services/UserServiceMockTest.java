@@ -11,7 +11,9 @@ import com.example.candidatepark.dtos.response.LoginResponse;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.response.VerificationResponseDTO;
 import com.example.candidatepark.exceptions.DuplicateSignUpException;
+import com.example.candidatepark.exceptions.InvalidDetailsException;
 import com.example.candidatepark.exceptions.InvalidTokenException;
+import com.example.candidatepark.exceptions.VerificationValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -174,8 +176,6 @@ public class UserServiceMockTest {
         existingUser.setPassword(loginDTO.getPassword());
         existingUser.setEmailVerified(true);
 
-        when(userRepository.findByEmail(testUserDTO.getEmail()))
-                .thenReturn(existingUser);
         UsernamePasswordAuthenticationToken authenticatedToken =
                 new UsernamePasswordAuthenticationToken(
                         testUserDTO.getEmail(),
@@ -183,16 +183,61 @@ public class UserServiceMockTest {
                         Collections.emptyList()
                 );
 
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
         when(jwtService.generateToken(testUserDTO.getEmail())).thenReturn("mockJwtToken");
-        when(userRepository.findByEmail(loginDTO.getEmail())).thenReturn(existingUser);
         when(authenticationManager.authenticate(any(Authentication.class)))
-                .thenReturn(new UsernamePasswordAuthenticationToken(
-                        loginDTO.getEmail(),
-                        loginDTO.getPassword()
-                ));
+                .thenReturn(authenticatedToken);
+
         LoginResponse loginResponse = userServices.login(testUserDTO);
 
         assertThat(loginResponse).isNotNull();
+        assertThat(loginResponse.getToken()).isNotNull();
+
+
+    }
+    @Test
+    void userTryingToLoginWithUnVerifiedEmailRaiseErrorTest(){
+
+        UserDTO loginDTO = new UserDTO();
+        loginDTO.setEmail(testUserDTO.getEmail());
+        loginDTO.setPassword("encodedPassword");
+
+        User existingUser = new User();
+        existingUser.setEmail(loginDTO.getEmail());
+        existingUser.setPassword(loginDTO.getPassword());
+
+        UsernamePasswordAuthenticationToken authenticatedToken =
+                new UsernamePasswordAuthenticationToken(
+                        testUserDTO.getEmail(),
+                        testUserDTO.getPassword(),
+                        Collections.emptyList()
+                );
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(authenticatedToken);
+
+        assertThrows(VerificationValidationException.class,()-> userServices.login(testUserDTO));
+
+
+
+    }
+    @Test
+    void userLoginWithInvalidLoginThrowsExceptionTest(){
+        UserDTO loginDTO = new UserDTO();
+        loginDTO.setEmail("incorrectEmail");
+        loginDTO.setPassword("encodedPassword");
+
+        UsernamePasswordAuthenticationToken authenticatedToken =
+                new UsernamePasswordAuthenticationToken(
+                        testUserDTO.getEmail(),
+                        testUserDTO.getPassword()
+                );
+
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(authenticatedToken);
+
+        assertThrows(InvalidDetailsException.class,()->userServices.login(testUserDTO));
+
 
     }
 

@@ -13,6 +13,7 @@ import com.example.candidatepark.dtos.response.VerificationResponseDTO;
 import com.example.candidatepark.exceptions.DuplicateSignUpException;
 import com.example.candidatepark.exceptions.InvalidDetailsException;
 import com.example.candidatepark.exceptions.InvalidTokenException;
+import com.example.candidatepark.exceptions.VerificationValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,7 +42,9 @@ public class UserServiceImpl implements UserServices{
     @Override
     public SignUpResponse signUp(UserDTO testUser) {
         validateDetails(testUser);
-        if (userExist(testUser)){
+        if (userExist(testUser) ){
+            User foundUser = userRepository.findByEmail(testUser.getEmail());
+            sendEmailVerification(foundUser);
             SignUpResponse signUpResponse = new SignUpResponse();
             signUpResponse.setMessage("VERIFICATION RESENT");
             signUpResponse.setUser(userRepository.findByEmail(testUser.getEmail()));
@@ -68,9 +71,17 @@ public class UserServiceImpl implements UserServices{
         validateDetails(testUser);
         verifyUser(testUser);
 
-        LoginResponse loginResponse = new LoginResponse();
+        User foundUser = userRepository.findByEmail(testUser.getEmail());
 
+        if (!foundUser.isEmailVerified()) {
+            throw new VerificationValidationException("Email Not Verified");
+        }
+
+        LoginResponse loginResponse = new LoginResponse();
         loginResponse.setToken(jwtService.generateToken(testUser.getEmail()));
+        loginResponse.setUser(foundUser);
+        loginResponse.setMessage("Login successful");
+
         return loginResponse;
     }
 
