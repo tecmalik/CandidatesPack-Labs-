@@ -37,8 +37,8 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/verify")
-    public ResponseEntity<?> verifyToken(@RequestParam("token") TokenDTO tokenDTO){
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestParam("token") TokenDTO tokenDTO){
         try{
             VerificationResponseDTO verificationResponseDTO = userServices.verifyEmail(tokenDTO);
             return new ResponseEntity<>(verificationResponseDTO, HttpStatus.OK);

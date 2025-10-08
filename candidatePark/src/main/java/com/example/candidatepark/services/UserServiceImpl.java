@@ -1,5 +1,6 @@
 package com.example.candidatepark.services;
 
+import com.example.candidatepark.data.models.LoginRateLimiter;
 import com.example.candidatepark.data.models.User;
 import com.example.candidatepark.data.models.VerificationStatus;
 import com.example.candidatepark.data.models.VerificationToken;
@@ -10,11 +11,9 @@ import com.example.candidatepark.dtos.request.TokenDTO;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.dtos.response.VerificationResponseDTO;
-import com.example.candidatepark.exceptions.DuplicateSignUpException;
-import com.example.candidatepark.exceptions.InvalidDetailsException;
-import com.example.candidatepark.exceptions.InvalidTokenException;
-import com.example.candidatepark.exceptions.VerificationValidationException;
+import com.example.candidatepark.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserServiceImpl implements UserServices{
@@ -37,6 +37,14 @@ public class UserServiceImpl implements UserServices{
     BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder(12);
     @Autowired
     private TokenRepository tokenRepository;
+    @Autowired
+    private LoginRateLimiter loginRateLimiter;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    private static final int MAX_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 
     @Override
@@ -69,13 +77,25 @@ public class UserServiceImpl implements UserServices{
     @Override
     public LoginResponse login(UserDTO testUser) {
         validateDetails(testUser);
-        verifyUser(testUser);
 
+
+        // Check rate limit before authentication
+        if (!loginRateLimiter.allowRequest(testUser.getEmail())) {
+            throw new RateLimitExceededException(
+                    "Too many login attempts. Please try again later.",
+                    300 // 5 minutes in seconds
+            );
+        }
+
+        verifyUser(testUser);
         User foundUser = userRepository.findByEmail(testUser.getEmail());
 
         if (!foundUser.isEmailVerified()) {
             throw new VerificationValidationException("Email Not Verified");
         }
+
+        // Reset rate limit on successful login
+        loginRateLimiter.resetLimit(testUser.getEmail());
 
         LoginResponse loginResponse = new LoginResponse();
         loginResponse.setToken(jwtService.generateToken(testUser.getEmail()));
@@ -84,6 +104,7 @@ public class UserServiceImpl implements UserServices{
 
         return loginResponse;
     }
+
 
     @Override
     public VerificationResponseDTO verifyEmail(TokenDTO tokenDTO) {
@@ -134,7 +155,6 @@ public class UserServiceImpl implements UserServices{
         if(testUser.getEmail() == null || testUser.getEmail().isEmpty()) throw new InvalidDetailsException("Details Can not Be Blank");
         if(testUser.getPassword() == null || testUser.getPassword().isEmpty()) throw new InvalidDetailsException("Details Can not Be Blank");
     }
-
 
 
 }

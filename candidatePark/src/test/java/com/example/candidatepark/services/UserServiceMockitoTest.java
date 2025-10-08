@@ -1,5 +1,6 @@
 package com.example.candidatepark.services;
 
+import com.example.candidatepark.data.models.LoginRateLimiter;
 import com.example.candidatepark.data.models.User;
 import com.example.candidatepark.data.models.VerificationStatus;
 import com.example.candidatepark.data.models.VerificationToken;
@@ -10,10 +11,7 @@ import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.dtos.response.LoginResponse;
 import com.example.candidatepark.dtos.response.SignUpResponse;
 import com.example.candidatepark.dtos.response.VerificationResponseDTO;
-import com.example.candidatepark.exceptions.DuplicateSignUpException;
-import com.example.candidatepark.exceptions.InvalidDetailsException;
-import com.example.candidatepark.exceptions.InvalidTokenException;
-import com.example.candidatepark.exceptions.VerificationValidationException;
+import com.example.candidatepark.exceptions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,10 +32,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceMockTest {
+public class UserServiceMockitoTest {
 
     @Mock
     private UserRepository userRepository;
@@ -51,6 +49,8 @@ public class UserServiceMockTest {
     private BCryptPasswordEncoder passwordEncoder;
     @Mock
     private AuthenticationManager authenticationManager;
+    @Mock
+    private LoginRateLimiter loginRateLimiter;
     @InjectMocks
     private UserServiceImpl userServices;
 
@@ -184,6 +184,7 @@ public class UserServiceMockTest {
                 );
 
         when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(true);
         when(jwtService.generateToken(testUserDTO.getEmail())).thenReturn("mockJwtToken");
         when(authenticationManager.authenticate(any(Authentication.class)))
                 .thenReturn(authenticatedToken);
@@ -212,6 +213,7 @@ public class UserServiceMockTest {
                         testUserDTO.getPassword(),
                         Collections.emptyList()
                 );
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(true);
         when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
         when(authenticationManager.authenticate(any(Authentication.class)))
                 .thenReturn(authenticatedToken);
@@ -235,14 +237,127 @@ public class UserServiceMockTest {
 
         when(authenticationManager.authenticate(any(Authentication.class)))
                 .thenReturn(authenticatedToken);
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(true);
 
         assertThrows(InvalidDetailsException.class,()->userServices.login(testUserDTO));
 
 
     }
+    @Test
+    void userLoginWithBlankPasswordThrowsExceptionTest() {
+        testUserDTO.setPassword("");
 
+        InvalidDetailsException exception = assertThrows(
+                InvalidDetailsException.class,
+                () -> userServices.login(testUserDTO)
+        );
 
+        assertThat(exception.getMessage()).contains("Details Can not Be Blank");
+    }
 
+    @Test
+    void rateLimitIsCheckedBeforeAuthenticationTest() {
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(false);
 
+        assertThrows(RateLimitExceededException.class, () -> userServices.login(testUserDTO));
+
+        verify(loginRateLimiter).allowRequest(testUserDTO.getEmail());
+        verify(authenticationManager, never()).authenticate(any());
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void exceedingRateLimitThrowsRateLimitExceptionTest() {
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(false);
+
+        RateLimitExceededException exception = assertThrows(
+                RateLimitExceededException.class,
+                () -> userServices.login(testUserDTO)
+        );
+
+        assertThat(exception.getMessage()).contains("Too many login attempts");
+        assertThat(exception.getRetryAfterSeconds()).isEqualTo(300);
+    }
+
+    @Test
+    void successfulLoginResetsRateLimitTest() {
+        User existingUser = new User();
+        existingUser.setEmail(testUserDTO.getEmail());
+        existingUser.setPassword(testUserDTO.getPassword());
+        existingUser.setEmailVerified(true);
+
+        UsernamePasswordAuthenticationToken authenticatedToken =
+                new UsernamePasswordAuthenticationToken(
+                        testUserDTO.getEmail(),
+                        testUserDTO.getPassword(),
+                        Collections.emptyList()
+                );
+
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(true);
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(jwtService.generateToken(testUserDTO.getEmail())).thenReturn("mockJwtToken");
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(authenticatedToken);
+
+        userServices.login(testUserDTO);
+
+        verify(loginRateLimiter).resetLimit(testUserDTO.getEmail());
+    }
+
+    @Test
+    void failedLoginDoesNotResetRateLimitTest() {
+        User existingUser = new User();
+        existingUser.setEmail(testUserDTO.getEmail());
+        existingUser.setPassword(testUserDTO.getPassword());
+        existingUser.setEmailVerified(false);
+
+        UsernamePasswordAuthenticationToken authenticatedToken =
+                new UsernamePasswordAuthenticationToken(
+                        testUserDTO.getEmail(),
+                        testUserDTO.getPassword(),
+                        Collections.emptyList()
+                );
+
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail())).thenReturn(true);
+        when(userRepository.findByEmail(testUserDTO.getEmail())).thenReturn(existingUser);
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(authenticatedToken);
+
+        assertThrows(VerificationValidationException.class, () -> userServices.login(testUserDTO));
+
+        verify(loginRateLimiter).allowRequest(testUserDTO.getEmail());
+        verify(loginRateLimiter, never()).resetLimit(testUserDTO.getEmail());
+    }
+
+    @Test
+    void multipleFailedLoginAttemptsConsumesRateLimitTest() {
+        User existingUser = new User();
+        existingUser.setEmail(testUserDTO.getEmail());
+        existingUser.setPassword("wrongPassword");
+        existingUser.setEmailVerified(true);
+
+        // Simulate 5 failed attempts
+        when(loginRateLimiter.allowRequest(testUserDTO.getEmail()))
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false); // 6th attempt blocked
+
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenThrow(new InvalidDetailsException("INVALID CREDENTIALS"));
+
+        // First 5 attempts should throw InvalidDetailsException
+        for (int i = 0; i < 5; i++) {
+            assertThrows(InvalidDetailsException.class, () -> userServices.login(testUserDTO));
+        }
+
+        // 6th attempt should throw RateLimitExceededException
+        assertThrows(RateLimitExceededException.class, () -> userServices.login(testUserDTO));
+
+        verify(loginRateLimiter, times(6)).allowRequest(testUserDTO.getEmail());
+        verify(loginRateLimiter, never()).resetLimit(testUserDTO.getEmail());
+    }
 }
 
