@@ -118,7 +118,35 @@
                     </excludes>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.8</version>
+                <configuration>
+                    <!-- Set a custom output directory for the reports -->
+                    <outputDirectory>${project.reporting.outputDirectory}/my-custom-jacoco-folder</outputDirectory>
+                    <excludes>
+                        <!-- Exclude a specific application class -->
+                        <exclude>**/com/example/candidatePark/CandidateParkApplication.class</exclude>
+                        <!-- Exclude an entire package (e.g., config classes) -->
+                        <exclude>**/com/example/candidatePark/config/**/*</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
