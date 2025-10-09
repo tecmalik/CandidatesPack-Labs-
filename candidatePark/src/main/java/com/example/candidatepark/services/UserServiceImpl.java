@@ -13,7 +13,6 @@ import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.dtos.response.VerificationResponseDTO;
 import com.example.candidatepark.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -40,8 +39,8 @@ public class UserServiceImpl implements UserServices{
     @Autowired
     private LoginRateLimiter loginRateLimiter;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+//    @Autowired
+//    private RedisTemplate<String, Object> redisTemplate;
 
     private static final int MAX_ATTEMPTS = 5;
     private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
