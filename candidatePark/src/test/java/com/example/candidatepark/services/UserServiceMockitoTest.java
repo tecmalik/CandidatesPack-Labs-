@@ -1,6 +1,6 @@
 package com.example.candidatepark.services;
 
-import com.example.candidatepark.data.models.LoginRateLimiter;
+import com.example.candidatepark.Util.LoginRateLimiter;
 import com.example.candidatepark.data.models.User;
 import com.example.candidatepark.data.models.VerificationStatus;
 import com.example.candidatepark.data.models.VerificationToken;

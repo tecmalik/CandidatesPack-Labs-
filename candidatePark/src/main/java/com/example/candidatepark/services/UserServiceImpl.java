@@ -1,6 +1,6 @@
 package com.example.candidatepark.services;
 
-import com.example.candidatepark.data.models.LoginRateLimiter;
+import com.example.candidatepark.Util.LoginRateLimiter;
 import com.example.candidatepark.data.models.User;
 import com.example.candidatepark.data.models.VerificationStatus;
 import com.example.candidatepark.data.models.VerificationToken;
@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserServiceImpl implements UserServices{

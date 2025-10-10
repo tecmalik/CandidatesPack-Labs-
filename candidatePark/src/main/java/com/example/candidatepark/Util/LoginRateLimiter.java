@@ -1,7 +1,5 @@
-package com.example.candidatepark.data.models;
+package com.example.candidatepark.Util;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -71,5 +69,4 @@ public class LoginRateLimiter {
             }
         }
     }
-
 }
