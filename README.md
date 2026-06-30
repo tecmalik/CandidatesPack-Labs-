@@ -42,11 +42,11 @@ Client  ──>  AuthController  ──>  UserServiceImpl  ──>  UserReposito
 
 | Method | Path | Auth Required |
 |---|---|---|
-| `GET` | `/V1/auth/home` | ❌ |
-| `POST` | `/V1/auth/signup` | ❌ |
-| `GET` | `/V1/auth/verify-email?token=...` | ❌ |
-| `POST` | `/V1/auth/login` | ❌ |
-| All others | any | ✅ JWT Bearer |
+| `GET` | `/V1/auth/home` | No |
+| `POST` | `/V1/auth/signup` | No |
+| `GET` | `/V1/auth/verify-email?token=...` | No |
+| `POST` | `/V1/auth/login` | No |
+| All others | any | Yes (JWT Bearer) |
 
 ## Who is this for?
 
