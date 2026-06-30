@@ -1,9 +1,9 @@
 package com.example.candidatepark.controllers;
 
 
-import com.example.candidatepark.dtos.request.TokenDTO;
 import com.example.candidatepark.dtos.response.LoginResponse;
 import com.example.candidatepark.dtos.response.SignUpResponse;
+import com.example.candidatepark.dtos.request.TokenDTO;
 import com.example.candidatepark.dtos.request.UserDTO;
 import com.example.candidatepark.dtos.response.VerificationResponseDTO;
 import com.example.candidatepark.services.UserServices;
@@ -12,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-;
 
 @RestController
 @RequestMapping("/V1/auth")
@@ -38,8 +36,10 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@RequestParam("token") TokenDTO tokenDTO){
+    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token){
         try{
+            TokenDTO tokenDTO = new TokenDTO();
+            tokenDTO.setToken(token);
             VerificationResponseDTO verificationResponseDTO = userServices.verifyEmail(tokenDTO);
             return new ResponseEntity<>(verificationResponseDTO, HttpStatus.OK);
 
